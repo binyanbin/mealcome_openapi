@@ -20,13 +20,21 @@ def base():
     return base_params
 
 
-def get(url, params):
+def request(url, params=None, data=None):
     base_params = base()
     if params is not None:
         urlParams = dict(base_params, **params)
     else:
-        urlParams = base_params \
-            # 排序
+        urlParams = base_params
+        
+    # bodySign
+    if data is not None:
+        body = json.dumps(data)
+        bodymd = (body + clientSecret).encode("utf-8")
+        bodySign = hashlib.sha256(bodymd).hexdigest()
+        urlParams["bodySign"] = bodySign
+
+    # 排序
     urlParams = sorted(urlParams.items(), key=lambda dict: dict[0])
 
     # 创建签名字符串并生成签名
@@ -38,17 +46,19 @@ def get(url, params):
     request = url + "&sign=" + str(sign).upper()
     print("http://" + host + request)
     httpClient = http.client.HTTPConnection(host)
-    httpClient.request("GET", request)
+    if data is None:
+        httpClient.request("GET", request)
+    else:
+        httpClient.request("post", request, data)
+
     response = httpClient.getresponse()
     print(response.read())
 
 
-
-
 if __name__ == '__main__':
-    get("/store", None)
+    request("/store", None)
     params1 = {"begin": "2018-01-07 00:00:00", "end": "2018-01-09 23:59:59"}
-    get("/material/changes", params1)
+    request("/material/changes", params1)
     params = {"lastDate": "2017-11-04 10:00:00"}
-    get("/purchase/receipt/changes", params1)
-    get("/supplier/changes",params1)
+    request("/purchase/receipt/changes", params1)
+    request("/supplier/changes", params1)
