@@ -20,19 +20,17 @@ def base():
     return base_params
 
 
-def request(url, params=None, data=None):
+def request(url, params=None, data=None, delete=False):
     base_params = base()
     if params is not None:
         urlParams = dict(base_params, **params)
     else:
         urlParams = base_params
-        
-    # bodySign
     if data is not None:
         body = json.dumps(data)
         bodymd = (body + clientSecret).encode("utf-8")
         bodySign = hashlib.sha256(bodymd).hexdigest()
-        urlParams["bodySign"] = bodySign
+        urlParams["bodySign"] = str(bodySign).upper()
 
     # 排序
     urlParams = sorted(urlParams.items(), key=lambda dict: dict[0])
@@ -46,10 +44,13 @@ def request(url, params=None, data=None):
     request = url + "&sign=" + str(sign).upper()
     print("http://" + host + request)
     httpClient = http.client.HTTPConnection(host)
-    if data is None:
-        httpClient.request("GET", request)
+    if delete:
+        httpClient.request("DELETE", request)
     else:
-        httpClient.request("post", request, data)
+        if data is None:
+            httpClient.request("GET", request)
+        else:
+            httpClient.request("POST", request, body)
 
     response = httpClient.getresponse()
     print(response.read())
@@ -62,3 +63,20 @@ if __name__ == '__main__':
     params = {"lastDate": "2017-11-04 10:00:00"}
     request("/purchase/receipt/changes", params1)
     request("/supplier/changes", params1)
+    supplier = {
+        "name": "测试供应商3",
+        "fullName": "测试供应商3",
+        "phone": "1375514440761",
+        "pinyin": "csgys",
+        "contacts": "ll",
+        "representative": "ss",
+        "businessLicense": "lskdfjsdl",
+        "bankAccountCode": "sdlkfjsdlf",
+        "bankAccountName": "asdfasdf",
+        "bacnkBranch": "",
+        "bankName": "",
+        "note": "",
+        "erpCode": "erpcode"
+    }
+    request("/suppliers", None, supplier)
+    request("/suppliers/6014085", None, supplier)
